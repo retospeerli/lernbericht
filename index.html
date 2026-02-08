@@ -1,4 +1,4 @@
-<!-- index.html -->
+<!-- index.html (UPDATED) -->
 <!doctype html>
 <html lang="de">
 <head>
@@ -84,7 +84,8 @@
       </div>
 
       <div class="hint">
-        Tipp: Änderungen im Raster aktualisieren den Text automatisch. Im Text kannst du alles direkt bearbeiten (inkl. markierte Stellschrauben-Wörter).
+        Wichtig: Ein Kriterium wird <strong>nur dann</strong> im Text erwähnt, wenn du mindestens einen Punkt (Checkbox) auswählst
+        oder die <strong>Gesamtstufe</strong> bewusst setzt. Ohne Auswahl bleibt der Bereich im Text unerwähnt.
       </div>
     </section>
 
@@ -92,10 +93,10 @@
       <div class="card__row">
         <h2 class="h2">Beurteilungsraster</h2>
         <div class="legend">
-          <span class="pill">sehr gut</span>
-          <span class="pill">gut</span>
-          <span class="pill">genügend</span>
-          <span class="pill">ungenügend</span>
+          <span class="pill">lernziele übertroffen</span>
+          <span class="pill">lernziele gut erreicht</span>
+          <span class="pill">lernziele genügend erreicht</span>
+          <span class="pill">lernziele noch nicht erreicht</span>
         </div>
       </div>
 
@@ -136,7 +137,7 @@
           <div class="infoBox">
             <div class="infoBox__title">Markierungen im Editor</div>
             <p class="infoBox__p">
-              Stellschrauben-Wörter (z.B. <span class="mod">meist</span>, <span class="mod">gelegentlich</span>, <span class="mod">noch nicht durchgehend</span>) sind farbig markiert, damit du sie schnell findest.
+              Stellschrauben-Wörter (z.B. <span class="mod">oft</span>, <span class="mod">gelegentlich</span>, <span class="mod">noch nicht durchgehend</span>) sind farbig markiert.
               Im PDF wird alles schwarz-weiss ausgegeben.
             </p>
             <div class="infoBox__title">Widerspruchsschutz</div>
@@ -180,7 +181,7 @@
           </div>
 
           <div class="pdfFooterNote">
-            Hinweis: Die Detailauswahl basiert auf den angekreuzten Punkten im Raster.
+            Hinweis: Detailauswahl basiert auf den angekreuzten Punkten im Raster.
           </div>
         </article>
 
@@ -198,14 +199,8 @@
           <div class="pdfBlock">
             <div class="pdfSectionTitle">Bemerkungen der Eltern</div>
             <div class="linesBox" aria-label="Bemerkungen der Eltern (Handschriftfeld)">
-              <div class="line"></div>
-              <div class="line"></div>
-              <div class="line"></div>
-              <div class="line"></div>
-              <div class="line"></div>
-              <div class="line"></div>
-              <div class="line"></div>
-              <div class="line"></div>
+              <div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div>
+              <div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div>
             </div>
           </div>
 
@@ -228,7 +223,7 @@
     </section>
   </main>
 
-  <!-- Copilot overlay (hover 3s on button) -->
+  <!-- Copilot overlay -->
   <div id="overlay" class="overlay" aria-hidden="true">
     <div class="overlay__backdrop" data-close="1"></div>
     <div class="overlay__panel" role="dialog" aria-modal="true" aria-label="Copilot Anleitung">
@@ -237,10 +232,10 @@
       <ol class="overlay__ol">
         <li>Klicke <strong>„In Copilot bearbeiten“</strong>. Der Prompt wird vorher automatisch kopiert.</li>
         <li>In Copilot: <strong>Einfügen</strong> (Ctrl+V) und bearbeiten lassen.</li>
-        <li>Resultat zurückkopieren und im Editor prüfen/feinschleifen (Ton, Namen, Konkretheit).</li>
+        <li>Resultat zurückkopieren und im Editor prüfen/feinschleifen (Ton, Konkretheit).</li>
       </ol>
       <div class="overlay__tip">
-        Tipp: Die <span class="mod">markierten Stellschrauben-Wörter</span> kannst du gezielt ersetzen (z.B. „oft“ → „durchwegs“).
+        Tipp: Die <span class="mod">markierten Stellschrauben-Wörter</span> kannst du gezielt ersetzen.
       </div>
       <div class="overlay__actions">
         <button id="overlayOk" class="btn btn--primary" type="button" data-close="1">Verstanden</button>
