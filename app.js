@@ -1,257 +1,280 @@
-// app.js
+// app.js (UPDATED per your requirements)
+"use strict";
+
 /* =========================================================
    Fachkompetenzen – Lernziele (offline, GitHub Pages)
    - No CDN
    - PDF via local vendor/html2canvas.min.js + vendor/jspdf.umd.min.js
-   - Fallback: print in new tab
+   - Fallback: print in new tab (window.print)
+   - IMPORTANT RULE:
+     A criterion is mentioned in the generated text ONLY if:
+       - at least one checkbox point is selected, OR
+       - overall dropdown is set (not Auto)
+     If nothing is selected and overall is Auto -> not mentioned in text.
    ========================================================= */
 
-"use strict";
+/** -------------------------
+ *  LEVELS (global)
+ *  ------------------------- */
+const LEVEL_ORDER = ["ue", "gut", "gen", "noch"]; // left->right in PDF
+const LEVEL_LABEL = {
+  ue: "lernziele übertroffen",
+  gut: "lernziele gut erreicht",
+  gen: "lernziele genügend erreicht",
+  noch: "lernziele noch nicht erreicht"
+};
 
 /** -------------------------
- *  DATA CONFIG (example)
- *  - groups[] -> items[] -> levels: vv/g/ge/u -> { color, points:[{t, ex?}] }
+ *  DATA CONFIG (expanded, pedagogical & detailed)
+ *  - groups[] -> items[] -> levels -> { color, points:[{t, ex?}] }
  *  ------------------------- */
 const DATA = {
   groups: [
     {
-      id: "g1",
-      title: "Fachkompetenzen Deutsch",
-      note: "Beurteilung entlang zentraler Lernziele (Lesen, Schreiben, Sprache).",
+      id: "g_strat",
+      title: "Allgemeine Lernstrategien & Kompetenzen",
+      note: "Überfachliche Grundlagen für selbstständiges Lernen im Unterrichtsalltag.",
       items: [
         {
-          id: "de_lesen",
-          title: "Lesen & Textverständnis",
+          id: "ls_schriftlich",
+          title: "Schriftliche Arbeitsanweisungen verstehen",
           levels: {
-            vv: {
-              color: "#111",
-              points: [
-                { t: "liest flüssig, sinnbetont und mit sicherer Orientierung im Text", ex: "fluency" },
-                { t: "entnimmt Informationen präzise und stellt eigene Bezüge her", ex: "comprehension" },
-                { t: "nutzt passende Lesestrategien selbstständig (z.B. markieren, Fragen bilden)", ex: "strategies" }
-              ]
-            },
-            g: {
-              color: "#111",
-              points: [
-                { t: "liest überwiegend flüssig und versteht den Text zuverlässig", ex: "fluency" },
-                { t: "findet zentrale Informationen und kann sie in eigenen Worten wiedergeben", ex: "comprehension" },
-                { t: "setzt Lesestrategien passend ein, wenn sie thematisiert werden", ex: "strategies" }
-              ]
-            },
-            ge: {
-              color: "#111",
-              points: [
-                { t: "liest teilweise stockend; Tempo und Genauigkeit sind noch nicht durchgehend stabil", ex: "fluency" },
-                { t: "versteht Kernaussagen, braucht bei Details gelegentlich Unterstützung", ex: "comprehension" },
-                { t: "profitiert von klaren Strategien (Abschnitte, Schlüsselwörter, Leitfragen)", ex: "strategies" }
-              ]
-            },
-            u: {
-              color: "#111",
-              points: [
-                { t: "liest häufig stockend; das Verständnis wird dadurch deutlich erschwert", ex: "fluency" },
-                { t: "benötigt enges Coaching, um zentrale Informationen überhaupt zu sichern", ex: "comprehension" },
-                { t: "braucht sehr strukturierte Unterstützung (kurze Texte, Vorentlastung, wiederholtes Üben)", ex: "strategies" }
-              ]
-            }
+            ue: { color:"#111", points: [
+              { t:"erfasst schriftliche Arbeitsaufträge rasch, präzise und setzt sie ohne zusätzliche Erklärungen korrekt um", ex:"core" },
+              { t:"identifiziert selbstständig relevante Informationen (Material, Reihenfolge, Kriterien) und priorisiert sinnvoll", ex:"strategie" },
+              { t:"fragt gezielt nach, wenn Unklarheiten bestehen, und klärt diese effizient", ex:"fragen" }
+            ]},
+            gut: { color:"#111", points: [
+              { t:"versteht schriftliche Arbeitsaufträge zuverlässig und setzt die wesentlichen Schritte korrekt um", ex:"core" },
+              { t:"achtet auf Kriterien und kann wichtige Informationen im Text markieren oder notieren, wenn es hilfreich ist", ex:"strategie" },
+              { t:"stellt bei Bedarf passende Rückfragen, um Missverständnisse zu vermeiden", ex:"fragen" }
+            ]},
+            gen: { color:"#111", points: [
+              { t:"versteht die Kernaussagen schriftlicher Arbeitsaufträge, braucht bei Details jedoch gelegentlich Unterstützung", ex:"core" },
+              { t:"profitiert von Strukturhilfen (Abschnitte, Checklisten, Schlüsselwörter markieren)", ex:"strategie" },
+              { t:"Rückfragen erfolgen noch nicht immer rechtzeitig; kurze Klärungen vor dem Start unterstützen", ex:"fragen" }
+            ]},
+            noch: { color:"#111", points: [
+              { t:"hat Mühe, schriftliche Arbeitsanweisungen selbstständig zu erfassen; zentrale Schritte werden häufig übersehen", ex:"core" },
+              { t:"benötigt enges Coaching (Vorlesen/Paraphrasieren, kurze Teilschritte, visuelle Stützen)", ex:"strategie" },
+              { t:"braucht klare Routinen zum Nachfragen (Was ist zu tun? Womit beginne ich? Woran erkenne ich, dass es stimmt?)", ex:"fragen" }
+            ]}
           }
         },
         {
-          id: "de_schreiben",
-          title: "Schreiben & Textgestaltung",
+          id: "ls_muendlich",
+          title: "Mündliche Arbeitsanweisungen verstehen",
           levels: {
-            vv: {
-              color: "#111",
-              points: [
-                { t: "verfasst klare, gut strukturierte Texte mit treffendem Wortschatz", ex: "structure" },
-                { t: "setzt Rechtschreibung und Grammatik sicher ein", ex: "orthography" },
-                { t: "überarbeitet Texte gezielt (Inhalt, Sprache, Form)", ex: "revision" }
-              ]
-            },
-            g: {
-              color: "#111",
-              points: [
-                { t: "schreibt verständliche Texte mit nachvollziehbarer Gliederung", ex: "structure" },
-                { t: "Rechtschreibung und Grammatik sind weitgehend sicher", ex: "orthography" },
-                { t: "überarbeitet Texte nach Hinweisen und überprüft wichtige Stellen", ex: "revision" }
-              ]
-            },
-            ge: {
-              color: "#111",
-              points: [
-                { t: "Texte sind grundsätzlich verständlich, wirken aber noch nicht durchgehend geordnet", ex: "structure" },
-                { t: "macht wiederkehrende Fehler; profitiert von gezielten Strategien (Wörterlisten, Kontrollschritte)", ex: "orthography" },
-                { t: "überarbeitet Texte noch wenig selbstständig; braucht klare Checklisten", ex: "revision" }
-              ]
-            },
-            u: {
-              color: "#111",
-              points: [
-                { t: "Texte sind häufig schwer verständlich; Struktur und Satzbau benötigen intensive Unterstützung", ex: "structure" },
-                { t: "Rechtschreibung/Grammatik sind deutlich unsicher; es braucht konsequente Übungssequenzen", ex: "orthography" },
-                { t: "überarbeitet ohne enge Begleitung kaum; klare, kleinschrittige Coaching-Phasen sind nötig", ex: "revision" }
-              ]
-            }
+            ue: { color:"#111", points: [
+              { t:"hört aufmerksam zu, erfasst mündliche Anweisungen vollständig und setzt sie unmittelbar korrekt um", ex:"core" },
+              { t:"kann Aufträge sinngemäss wiedergeben und bei Bedarf in eigene Schritte übersetzen", ex:"strategie" },
+              { t:"achtet selbstständig auf Abmachungen/Regeln und erinnert sich auch über längere Zeitspannen zuverlässig", ex:"gedaechtnis" }
+            ]},
+            gut: { color:"#111", points: [
+              { t:"versteht mündliche Anweisungen zuverlässig und führt die wesentlichen Schritte korrekt aus", ex:"core" },
+              { t:"kann zentrale Punkte wiederholen oder notieren, wenn Aufgaben mehrteilig sind", ex:"strategie" },
+              { t:"fragt nach, wenn etwas unklar ist, und kann dann gut weiterarbeiten", ex:"fragen" }
+            ]},
+            gen: { color:"#111", points: [
+              { t:"versteht mündliche Anweisungen grundsätzlich, verliert bei mehrteiligen Aufträgen jedoch gelegentlich den Überblick", ex:"core" },
+              { t:"profitiert von kurzen Wiederholungen, Visualisierungen oder schriftlichen Stichworten", ex:"strategie" },
+              { t:"braucht manchmal einen Startimpuls (Womit beginnen? Was ist der nächste Schritt?)", ex:"start" }
+            ]},
+            noch: { color:"#111", points: [
+              { t:"mündliche Anweisungen werden häufig unvollständig verstanden; es kommt wiederholt zu Fehlstarts", ex:"core" },
+              { t:"benötigt konsequent klare, kurze Teilschritte sowie Rückversicherung (Auftrag in eigenen Worten wiederholen)", ex:"strategie" },
+              { t:"eine feste Struktur (z.B. 1–2–3 Schritte, Visualisierung an der Tafel) ist notwendig", ex:"struktur" }
+            ]}
           }
         },
         {
-          id: "de_sprechen",
-          title: "Mündliche Kommunikation",
+          id: "ls_learningview",
+          title: "Arbeitsplan/Wochenplan mit LearningView (Selbstständigkeit)",
           levels: {
-            vv: {
-              color: "#111",
-              points: [
-                { t: "spricht präzise und adressatengerecht; argumentiert überzeugend", ex: "clarity" },
-                { t: "hört aktiv zu und greift Beiträge anderer sinnvoll auf", ex: "listening" },
-                { t: "präsentiert sicher (Tempo, Lautstärke, Struktur)", ex: "presentation" }
-              ]
-            },
-            g: {
-              color: "#111",
-              points: [
-                { t: "drückt sich klar aus und kann Gedanken gut erklären", ex: "clarity" },
-                { t: "hört meist aufmerksam zu und reagiert passend", ex: "listening" },
-                { t: "präsentiert vorbereitet und verständlich", ex: "presentation" }
-              ]
-            },
-            ge: {
-              color: "#111",
-              points: [
-                { t: "formuliert verständlich, braucht aber gelegentlich Zeit oder Leitfragen", ex: "clarity" },
-                { t: "hört zu, verliert jedoch vereinzelt den Faden; profitiert von Gesprächsregeln", ex: "listening" },
-                { t: "präsentiert noch unsicher; klare Strukturhilfen unterstützen", ex: "presentation" }
-              ]
-            },
-            u: {
-              color: "#111",
-              points: [
-                { t: "drückt sich oft unklar aus; es braucht häufiges Nachfragen und Strukturierung", ex: "clarity" },
-                { t: "hat Mühe, Gesprächsbeiträge zu halten; enges Coaching ist nötig", ex: "listening" },
-                { t: "Präsentationen gelingen nur mit intensiver Vorbereitung und Begleitung", ex: "presentation" }
-              ]
-            }
+            ue: { color:"#111", points: [
+              { t:"arbeitet sehr selbstständig mit LearningView, plant Aufgaben vorausschauend und hält Termine zuverlässig ein", ex:"core" },
+              { t:"steuert den Lernprozess bewusst (Prioritäten setzen, Pausen planen, Fortschritt reflektieren)", ex:"steuerung" },
+              { t:"nutzt digitale Rückmeldungen/Materialien eigenständig und transferiert diese in die Arbeit", ex:"transfer" }
+            ]},
+            gut: { color:"#111", points: [
+              { t:"arbeitet selbstständig mit LearningView am Arbeits-/Wochenplan und erledigt Aufgaben zuverlässig", ex:"core" },
+              { t:"orientiert sich an Kriterien und nutzt Hilfen (Hinweise, Beispiele) passend", ex:"hilfen" },
+              { t:"führt Aufgaben in angemessenem Tempo aus und bleibt grundsätzlich fokussiert", ex:"fokus" }
+            ]},
+            gen: { color:"#111", points: [
+              { t:"kann mit LearningView am Arbeitsplan arbeiten, braucht jedoch gelegentlich Strukturierung oder Erinnerung", ex:"core" },
+              { t:"profitiert von klaren Zwischenzielen (Was heute? Was zuerst?) und kurzen Check-ins", ex:"steuerung" },
+              { t:"bei anspruchsvolleren Aufgaben hilft eine geführte Planung (Zeit, Reihenfolge, Hilfsmittel)", ex:"planung" }
+            ]},
+            noch: { color:"#111", points: [
+              { t:"benötigt aktuell enges Coaching, um mit LearningView am Arbeits-/Wochenplan zielführend zu arbeiten", ex:"core" },
+              { t:"braucht feste Routinen (Startauftrag, Zwischenkontrolle, Abschlusskontrolle) und klare Priorisierung", ex:"steuerung" },
+              { t:"Aufgaben müssen kleinschrittig geplant und begleitet werden, damit Fortschritte stabil werden", ex:"planung" }
+            ]}
+          }
+        },
+        {
+          id: "ls_selbstkorrektur",
+          title: "Selbstkorrekturen anwenden und Lernen selbst steuern",
+          levels: {
+            ue: { color:"#111", points: [
+              { t:"wendet Selbstkorrekturen sehr sicher und konsequent an und verbessert Ergebnisse eigenständig", ex:"core" },
+              { t:"überprüft Arbeitsschritte systematisch (Kriterien, Zwischenergebnisse) und erkennt Fehler zuverlässig", ex:"kontrolle" },
+              { t:"nutzt Rückmeldungen aktiv, setzt daraus konkrete nächste Schritte und dokumentiert Fortschritte", ex:"naechste" }
+            ]},
+            gut: { color:"#111", points: [
+              { t:"wendet Selbstkorrekturen zuverlässig an und kann Fehler in der Regel selbst verbessern", ex:"core" },
+              { t:"kontrolliert wichtige Stellen (Rechenwege, Texte) sinnvoll und nutzt Kriterien zunehmend selbstständig", ex:"kontrolle" },
+              { t:"setzt Rückmeldungen um und arbeitet gezielt an Verbesserungen", ex:"naechste" }
+            ]},
+            gen: { color:"#111", points: [
+              { t:"wendet Selbstkorrekturen grundsätzlich an, braucht aber gelegentlich Unterstützung, um sie korrekt zu nutzen", ex:"core" },
+              { t:"profitiert von klaren Checklisten und festen Kontrollroutinen (Stopp – prüfen – verbessern)", ex:"kontrolle" },
+              { t:"nächste Schritte gelingen besser, wenn sie kurz und konkret vereinbart werden", ex:"naechste" }
+            ]},
+            noch: { color:"#111", points: [
+              { t:"wendet Selbstkorrekturen aktuell noch nicht zuverlässig an; Fehler bleiben häufig unbemerkt", ex:"core" },
+              { t:"benötigt enges Coaching beim Überprüfen (Kriterien gemeinsam anwenden, Beispiele vergleichen)", ex:"kontrolle" },
+              { t:"braucht klare, kleinschrittige Vereinbarungen, um Lernen wirksam zu steuern (Was übe ich? Wie oft? Woran merke ich Fortschritt?)", ex:"naechste" }
+            ]}
           }
         }
       ]
     },
+
     {
-      id: "g2",
-      title: "Fachkompetenzen Mathematik",
-      note: "Zentral: Verständnis, Strategien, Genauigkeit und Anwendung.",
+      id: "g_ma",
+      title: "Fachkompetenzen Mathematik (Grundlagen & Anwendungen)",
+      note: "Beurteilung zentraler mathematischer Grundlagen sowie Anwendung und Darstellung von Lösungswegen.",
       items: [
         {
-          id: "ma_grundvor",
-          title: "Zahlenverständnis & Grundvorstellungen",
+          id: "ma_zahlensystem",
+          title: "Zahlenvorstellungen & Zahlensysteme (Dezimalsystem)",
           levels: {
-            vv: {
-              color: "#111",
-              points: [
-                { t: "versteht Zahlenbeziehungen sicher und nutzt sie flexibel", ex: "numberSense" },
-                { t: "erklärt Vorgehensweisen präzise und nachvollziehbar", ex: "explain" },
-                { t: "erkennt Muster/Strukturen schnell und nutzt sie für effiziente Lösungen", ex: "patterns" }
-              ]
-            },
-            g: {
-              color: "#111",
-              points: [
-                { t: "arbeitet mit Zahlenbeziehungen zuverlässig und sinnvoll", ex: "numberSense" },
-                { t: "kann Vorgehensweisen gut erklären, wenn sie eingeführt sind", ex: "explain" },
-                { t: "nutzt Muster/Strukturen in bekannten Aufgaben passend", ex: "patterns" }
-              ]
-            },
-            ge: {
-              color: "#111",
-              points: [
-                { t: "Zahlenbeziehungen sind grundsätzlich vorhanden, aber noch nicht durchgehend sicher", ex: "numberSense" },
-                { t: "Erklärungen gelingen teilweise; Leitfragen und Beispiele helfen", ex: "explain" },
-                { t: "nutzt Muster/Strukturen noch unregelmässig; profitiert von wiederholter Übung", ex: "patterns" }
-              ]
-            },
-            u: {
-              color: "#111",
-              points: [
-                { t: "Zahlenverständnis ist lückenhaft; grundlegende Beziehungen müssen gezielt aufgebaut werden", ex: "numberSense" },
-                { t: "kann Vorgehensweisen kaum erklären; es braucht kleinschrittige Modellierung", ex: "explain" },
-                { t: "Strukturen werden selten erkannt; systematische, angeleitete Übungsphasen sind nötig", ex: "patterns" }
-              ]
-            }
+            ue: { color:"#111", points: [
+              { t:"versteht Stellenwert, Bündelung und Zerlegung sehr sicher und nutzt das Dezimalsystem flexibel in verschiedenen Kontexten", ex:"core" },
+              { t:"erklärt Zahlenbeziehungen präzise (z.B. Zehner/ Hunderter/ Tausender) und begründet Vorgehensweisen nachvollziehbar", ex:"erklaeren" },
+              { t:"nutzt Darstellungen (Material, Skizzen, Zahlengerade) souverän und passend", ex:"darstellung" }
+            ]},
+            gut: { color:"#111", points: [
+              { t:"wendet das Dezimalsystem zuverlässig an und arbeitet sicher mit Stellenwert und Zerlegung", ex:"core" },
+              { t:"kann Zahlenbeziehungen gut erklären, wenn sie eingeführt sind", ex:"erklaeren" },
+              { t:"nutzt passende Darstellungen (Skizzen, Zahlengerade) in der Regel sinnvoll", ex:"darstellung" }
+            ]},
+            gen: { color:"#111", points: [
+              { t:"versteht das Dezimalsystem grundsätzlich, ist bei Zerlegungen/Stellenwertwechseln jedoch gelegentlich noch unsicher", ex:"core" },
+              { t:"profitiert von anschaulichen Darstellungen und wiederholter Anwendung in ähnlichen Aufgaben", ex:"darstellung" },
+              { t:"Erklärungen gelingen teilweise; Leitfragen und Beispiele unterstützen", ex:"erklaeren" }
+            ]},
+            noch: { color:"#111", points: [
+              { t:"Stellenwert und Zerlegung sind aktuell noch nicht ausreichend gesichert; es kommt häufig zu Verwechslungen", ex:"core" },
+              { t:"benötigt konsequent anschauliche Stützen (Material, Zahlentafel, Zahlengerade) und kleinschrittige Übungen", ex:"darstellung" },
+              { t:"braucht enges Coaching beim Erklären/Begründen von Zahlenschritten", ex:"erklaeren" }
+            ]}
           }
         },
         {
-          id: "ma_strat",
-          title: "Rechenstrategien & Genauigkeit",
+          id: "ma_grundop",
+          title: "Grundoperationen (Addition/Subtraktion sowie Multiplikation/Division)",
           levels: {
-            vv: {
-              color: "#111",
-              points: [
-                { t: "wählt passende Strategien selbstständig und rechnet sehr genau", ex: "accuracy" },
-                { t: "kontrolliert Ergebnisse konsequent und erkennt Fehler sofort", ex: "check" },
-                { t: "arbeitet zügig, ohne an Sorgfalt zu verlieren", ex: "pace" }
-              ]
-            },
-            g: {
-              color: "#111",
-              points: [
-                { t: "wendet eingeführte Strategien sicher an und rechnet zuverlässig", ex: "accuracy" },
-                { t: "kontrolliert Ergebnisse in der Regel sinnvoll", ex: "check" },
-                { t: "arbeitet in angemessenem Tempo", ex: "pace" }
-              ]
-            },
-            ge: {
-              color: "#111",
-              points: [
-                { t: "Strategien sind vorhanden, werden aber noch nicht durchgehend passend gewählt", ex: "accuracy" },
-                { t: "Fehler entstehen gelegentlich durch Tempo oder Unsicherheit; Kontrollschritte helfen", ex: "check" },
-                { t: "braucht in anspruchsvolleren Aufgaben mehr Zeit und klare Struktur", ex: "pace" }
-              ]
-            },
-            u: {
-              color: "#111",
-              points: [
-                { t: "Strategien sind unsicher; es braucht konsequente Aufbau- und Übungssequenzen", ex: "accuracy" },
-                { t: "macht häufig Fehler; enges Coaching und feste Kontrollroutinen sind nötig", ex: "check" },
-                { t: "Tempo ist deutlich verlangsamt oder unkontrolliert; Aufgaben müssen kleinschrittig gestaltet werden", ex: "pace" }
-              ]
-            }
+            ue: { color:"#111", points: [
+              { t:"wendet passende Rechenstrategien sehr sicher an und rechnet auch in komplexeren Aufgaben exakt", ex:"core" },
+              { t:"kontrolliert Ergebnisse konsequent (Überschlag, Umkehrrechnung) und erkennt Fehler zuverlässig", ex:"kontrolle" },
+              { t:"stellt Rechenwege klar und vollständig dar und kann Vorgehensweisen präzise erklären", ex:"darstellung" }
+            ]},
+            gut: { color:"#111", points: [
+              { t:"rechnet in den Grundoperationen zuverlässig und nutzt eingeführte Strategien sicher", ex:"core" },
+              { t:"kontrolliert Ergebnisse in der Regel sinnvoll und verbessert Fehler nach Hinweisen", ex:"kontrolle" },
+              { t:"stellt Rechenwege meist vollständig dar und kann wichtige Schritte erklären", ex:"darstellung" }
+            ]},
+            gen: { color:"#111", points: [
+              { t:"wendet Grundoperationen grundsätzlich korrekt an, ist jedoch noch nicht durchgehend sicher (Tempo/Genauigkeit)", ex:"core" },
+              { t:"profitiert von festen Kontrollroutinen und klaren Strategien (z.B. Teilschritte, Stellenwert-Check)", ex:"kontrolle" },
+              { t:"Rechenwege sind teilweise lückenhaft; klare Darstellungshilfen unterstützen", ex:"darstellung" }
+            ]},
+            noch: { color:"#111", points: [
+              { t:"Grundoperationen sind aktuell noch nicht ausreichend gesichert; Fehler treten häufig und wiederkehrend auf", ex:"core" },
+              { t:"benötigt enges Coaching, kleinschrittige Übungssequenzen und konsequente Kontrollstrategien", ex:"kontrolle" },
+              { t:"Rechenwege werden oft nicht vollständig dargestellt; strukturierende Vorgaben sind notwendig", ex:"darstellung" }
+            ]}
           }
         },
         {
-          id: "ma_anw",
-          title: "Anwendung & Problemlösen",
+          id: "ma_textaufgaben",
+          title: "Sach-/Textaufgaben verstehen & Lösungswege darstellen",
           levels: {
-            vv: {
-              color: "#111",
-              points: [
-                { t: "überträgt Gelerntes souverän auf neue Aufgabenstellungen", ex: "transfer" },
-                { t: "plant Lösungswege strategisch und begründet Entscheidungen", ex: "plan" },
-                { t: "prüft Resultate kritisch und verbessert Lösungen eigenständig", ex: "reflect" }
-              ]
-            },
-            g: {
-              color: "#111",
-              points: [
-                { t: "wendet Gelerntes in vertrauten Kontexten sicher an", ex: "transfer" },
-                { t: "findet passende Lösungswege und kann sie erklären", ex: "plan" },
-                { t: "überprüft Resultate meist sinnvoll", ex: "reflect" }
-              ]
-            },
-            ge: {
-              color: "#111",
-              points: [
-                { t: "in neuen Kontexten braucht es häufig Hinweise und Strukturierung", ex: "transfer" },
-                { t: "Lösungswege entstehen mit Unterstützung; Zwischenziele helfen", ex: "plan" },
-                { t: "Reflexion gelingt punktuell; klare Leitfragen unterstützen", ex: "reflect" }
-              ]
-            },
-            u: {
-              color: "#111",
-              points: [
-                { t: "Transfer gelingt selten; Aufgaben müssen stark geführt und vereinfacht werden", ex: "transfer" },
-                { t: "Lösungsplanung braucht enges Coaching und modellierte Beispiele", ex: "plan" },
-                { t: "Überprüfung/Reflexion erfolgt kaum; feste Routinen sind nötig", ex: "reflect" }
-              ]
-            }
+            ue: { color:"#111", points: [
+              { t:"analysiert Textaufgaben sehr sicher (gesucht/gegeben), wählt passende Strategien und begründet Entscheidungen überzeugend", ex:"analyse" },
+              { t:"stellt Lösungswege vollständig, geordnet und verständlich dar (Skizze, Rechnung, Satz)", ex:"darstellung" },
+              { t:"prüft Resultate kritisch (Plausibilität, Einheit, Rückbezug zur Frage) und korrigiert selbstständig", ex:"kontrolle" }
+            ]},
+            gut: { color:"#111", points: [
+              { t:"versteht Textaufgaben zuverlässig und findet in der Regel passende Lösungswege", ex:"analyse" },
+              { t:"stellt Rechenwege meist vollständig dar und beantwortet die Frage passend", ex:"darstellung" },
+              { t:"überprüft Ergebnisse in vielen Fällen sinnvoll (Rückbezug zur Fragestellung)", ex:"kontrolle" }
+            ]},
+            gen: { color:"#111", points: [
+              { t:"versteht Kernaussagen, braucht bei der Auswahl des Lösungswegs jedoch gelegentlich Unterstützung", ex:"analyse" },
+              { t:"profitiert von Strukturhilfen (Markieren, Skizze, Zwischenfragen) und klaren Darstellungsvorgaben", ex:"darstellung" },
+              { t:"Kontrolle erfolgt noch unregelmässig; feste Prüfschritte unterstützen", ex:"kontrolle" }
+            ]},
+            noch: { color:"#111", points: [
+              { t:"hat Mühe, Textaufgaben selbstständig zu erschliessen; die mathematische Struktur wird häufig nicht erkannt", ex:"analyse" },
+              { t:"benötigt enges Coaching (Vorentlastung, Skizze, schrittweise Leitfragen) und kleinschrittige Aufgabenformate", ex:"darstellung" },
+              { t:"Resultatkontrolle gelingt kaum; feste Routinen (Einheit, Plausibilität, Rücksatz) sind nötig", ex:"kontrolle" }
+            ]}
+          }
+        },
+        {
+          id: "ma_groessen",
+          title: "Grössen & Daten (metrisches System, Umrechnen, Proportionalität, Tabellen/Grafiken)",
+          levels: {
+            ue: { color:"#111", points: [
+              { t:"versteht Präfixe im metrischen System sehr sicher und rechnet Grössen flexibel und korrekt um", ex:"metrisch" },
+              { t:"erkennt proportionale Zusammenhänge zuverlässig und kann diese nachvollziehbar darstellen", ex:"proportional" },
+              { t:"liest, interpretiert und erstellt Tabellen/Grafiken präzise (Achsen, Einheiten, Aussage)", ex:"daten" }
+            ]},
+            gut: { color:"#111", points: [
+              { t:"wendet das metrische System zuverlässig an und kann gängige Umrechnungen korrekt durchführen", ex:"metrisch" },
+              { t:"versteht grundlegende Zusammenhänge/Proportionalität in vertrauten Kontexten und nutzt passende Verfahren", ex:"proportional" },
+              { t:"kann Tabellen/Grafiken lesen und wichtige Informationen entnehmen; Darstellungen gelingen in der Regel korrekt", ex:"daten" }
+            ]},
+            gen: { color:"#111", points: [
+              { t:"versteht Grössen grundsätzlich, ist bei Umrechnungen oder Präfixen jedoch gelegentlich unsicher", ex:"metrisch" },
+              { t:"proportionale Zusammenhänge gelingen punktuell; Beispiele und klare Strategien unterstützen", ex:"proportional" },
+              { t:"bei Tabellen/Grafiken braucht es manchmal Hilfe (Achsen, Einheiten, Übertragen von Werten)", ex:"daten" }
+            ]},
+            noch: { color:"#111", points: [
+              { t:"Präfixe/Umrechnungen sind noch nicht ausreichend gesichert; es kommt häufig zu Verwechslungen", ex:"metrisch" },
+              { t:"Zusammenhänge/Proportionalität werden selten erkannt; es braucht enges Coaching und viele anschauliche Beispiele", ex:"proportional" },
+              { t:"Tabellen/Grafiken können aktuell nur mit starker Unterstützung gelesen oder erstellt werden", ex:"daten" }
+            ]}
+          }
+        },
+        {
+          id: "ma_geo",
+          title: "Geometrie & Raum (Linien, Flächen, Körper, Symmetrie, Orientierung, räumliche Vorstellung)",
+          levels: {
+            ue: { color:"#111", points: [
+              { t:"erkennt und beschreibt geometrische Eigenschaften sehr sicher (Formen/Körper, Kanten/Ecken/Flächen) und nutzt Fachsprache präzise", ex:"core" },
+              { t:"arbeitet souverän mit Symmetrie, Mustern und Orientierung im Raum; Darstellungen sind genau und sauber", ex:"sym" },
+              { t:"zeigt ein ausgeprägtes räumliches Vorstellungsvermögen (Ansichten, Netze, Transformationen) und begründet Lösungen überzeugend", ex:"raum" }
+            ]},
+            gut: { color:"#111", points: [
+              { t:"benennt und nutzt grundlegende geometrische Begriffe korrekt und arbeitet zuverlässig mit Formen/Körpern", ex:"core" },
+              { t:"Symmetrie und Orientierung gelingen in der Regel sicher; Zeichnungen sind meist sauber", ex:"sym" },
+              { t:"räumliche Vorstellungen (z.B. Netze/Ansichten) gelingen in vertrauten Aufgabenstellungen gut", ex:"raum" }
+            ]},
+            gen: { color:"#111", points: [
+              { t:"kennt zentrale Begriffe, ist bei Eigenschaften/Unterscheidungen jedoch noch nicht durchgehend sicher", ex:"core" },
+              { t:"bei Symmetrie/Orientierung braucht es gelegentlich Hilfe (Hilfslinien, Beispiele, Schrittfolgen)", ex:"sym" },
+              { t:"räumliches Vorstellen gelingt punktuell; anschauliche Materialien und Training unterstützen", ex:"raum" }
+            ]},
+            noch: { color:"#111", points: [
+              { t:"geometrische Grundlagen sind aktuell noch nicht ausreichend gesichert; Begriffe/Eigenschaften werden häufig verwechselt", ex:"core" },
+              { t:"benötigt enges Coaching bei Symmetrie/Orientierung sowie klare, kleinschrittige Vorgehensweisen", ex:"sym" },
+              { t:"räumliche Vorstellungen (Netze/Ansichten) gelingen selten; es braucht systematische Aufbauübungen mit Material", ex:"raum" }
+            ]}
           }
         }
       ]
@@ -262,16 +285,9 @@ const DATA = {
 /** -------------------------
  *  GLOBAL STATE
  *  ------------------------- */
-const LEVEL_ORDER = ["vv", "g", "ge", "u"]; // must map to PDF order left->right
-const LEVEL_LABEL = { vv: "sehr gut", g: "gut", ge: "genügend", u: "ungenügend" };
-const LEVEL_SHORT = { vv: "sehr gut", g: "gut", ge: "genügend", u: "ungenügend" };
-
 const state = {
-  // overall: itemId -> "auto" | "vv" | "g" | "ge" | "u"
-  overall: Object.create(null),
-  // checks: itemId -> levelKey -> boolean[]
-  checks: Object.create(null),
-  // speech
+  overall: Object.create(null), // itemId -> "auto" | levelKey
+  checks: Object.create(null),  // itemId -> levelKey -> boolean[]
   speech: { textRec: null, commentRec: null }
 };
 
@@ -283,11 +299,11 @@ const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
 
 function esc(s){
   return String(s ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
 }
 
 function todayISO(){
@@ -299,52 +315,40 @@ function todayISO(){
 }
 
 function formatSwissDate(iso){
-  // iso: YYYY-MM-DD
   if(!iso) return "";
   const [y,m,d] = iso.split("-").map(x=>parseInt(x,10));
   if(!y || !m || !d) return iso;
   return `${String(d).padStart(2,"0")}.${String(m).padStart(2,"0")}.${y}`;
 }
 
+function cssEscape(v){
+  try{ return CSS.escape(String(v)); }catch(_){ return String(v).replaceAll('"','\\"'); }
+}
+
 /** -------------------------
- *  PRONOUNS / GRAMMAR
+ *  PRONOUNS
  *  ------------------------- */
 function getPronouns(){
   const g = $("#fGender").value; // m/w
   if(g === "w"){
-    return {
-      subj: "sie",
-      poss: "ihr",
-      obj: "sie",
-      capSubj: "Sie",
-      capPoss: "Ihr"
-    };
+    return { subj:"sie", obj:"sie", poss:"ihr", capSubj:"Sie", capPoss:"Ihr" };
   }
-  return {
-    subj: "er",
-    poss: "sein",
-    obj: "ihn",
-    capSubj: "Er",
-    capPoss: "Sein"
-  };
+  return { subj:"er", obj:"ihn", poss:"sein", capSubj:"Er", capPoss:"Sein" };
 }
 
 /** -------------------------
- *  INIT DEFAULTS
+ *  INIT
  *  ------------------------- */
 function initDefaults(){
   $("#fPlace").value = "Wädenswil";
   $("#fDate").value = todayISO();
 }
 
-/** -------------------------
- *  BUILD INITIAL STATE
- *  ------------------------- */
 function initStateFromData(){
   for(const group of DATA.groups){
     for(const item of group.items){
       state.overall[item.id] = "auto";
-      state.checks[item.id] = { vv: [], g: [], ge: [], u: [] };
+      state.checks[item.id] = Object.create(null);
       for(const lk of LEVEL_ORDER){
         const pts = item.levels[lk]?.points ?? [];
         state.checks[item.id][lk] = pts.map(()=>false);
@@ -354,7 +358,7 @@ function initStateFromData(){
 }
 
 /** -------------------------
- *  RASTER UI RENDER
+ *  RASTER RENDER
  *  ------------------------- */
 function renderRaster(){
   const mount = $("#rasterMount");
@@ -375,10 +379,9 @@ function renderRaster(){
     const body = $(".group__body", gEl);
 
     for(const item of group.items){
+      const overallVal = state.overall[item.id] ?? "auto";
       const itemEl = document.createElement("div");
       itemEl.className = "item";
-      const overallVal = state.overall[item.id] ?? "auto";
-
       itemEl.innerHTML = `
         <div class="item__row">
           <div>
@@ -389,10 +392,7 @@ function renderRaster(){
             <label>Gesamtstufe</label>
             <select data-overall="${esc(item.id)}" aria-label="Gesamtstufe ${esc(item.title)}">
               <option value="auto"${overallVal==="auto"?" selected":""}>Auto</option>
-              <option value="vv"${overallVal==="vv"?" selected":""}>sehr gut</option>
-              <option value="g"${overallVal==="g"?" selected":""}>gut</option>
-              <option value="ge"${overallVal==="ge"?" selected":""}>genügend</option>
-              <option value="u"${overallVal==="u"?" selected":""}>ungenügend</option>
+              ${LEVEL_ORDER.map(lk=>`<option value="${lk}"${overallVal===lk?" selected":""}>${esc(LEVEL_LABEL[lk])}</option>`).join("")}
             </select>
           </div>
         </div>
@@ -401,42 +401,33 @@ function renderRaster(){
           ${LEVEL_ORDER.map(lk => renderLevelColumn(item, lk)).join("")}
         </div>
       `;
-
       body.appendChild(itemEl);
     }
 
     mount.appendChild(gEl);
   }
 
-  // wire events
+  // events
   $$("select[data-overall]").forEach(sel=>{
     sel.addEventListener("change", (e)=>{
       const id = e.target.getAttribute("data-overall");
       state.overall[id] = e.target.value;
-      // When overall changes, regenerate text
       refreshAll();
     });
   });
 
   $$("input[type=checkbox][data-item]").forEach(cb=>{
-    cb.addEventListener("change", (e)=>{
+    cb.addEventListener("change",(e)=>{
       const el = e.target;
       const itemId = el.getAttribute("data-item");
       const levelKey = el.getAttribute("data-level");
       const idx = parseInt(el.getAttribute("data-idx"), 10);
       const ex = el.getAttribute("data-ex") || "";
 
-      // update own state
       state.checks[itemId][levelKey][idx] = el.checked;
 
-      // exclusivity enforcement (within same item across ALL levels)
       if(el.checked && ex){
         enforceExclusivity(itemId, ex, levelKey, idx);
-      }
-
-      // If overall is auto, it should follow checks
-      if(state.overall[itemId] === "auto"){
-        // no direct change here; computed later, but text refresh uses computed
       }
 
       refreshAll();
@@ -452,7 +443,7 @@ function renderLevelColumn(item, lk){
     <div class="levelCol">
       <div class="levelCol__head">${esc(label)}</div>
       <div class="levelCol__list">
-        ${pts.map((p, i)=>{
+        ${pts.map((p,i)=>{
           const checked = checks[i] ? " checked" : "";
           const exAttr = p.ex ? ` data-ex="${esc(p.ex)}"` : "";
           const exSmall = p.ex ? `<small>ex: ${esc(p.ex)}</small>` : "";
@@ -468,27 +459,6 @@ function renderLevelColumn(item, lk){
   `;
 }
 
-function enforceExclusivity(itemId, exKey, keepLevel, keepIdx){
-  for(const lk of LEVEL_ORDER){
-    const pts = getItemById(itemId).levels[lk]?.points ?? [];
-    for(let i=0; i<pts.length; i++){
-      if(lk===keepLevel && i===keepIdx) continue;
-      if((pts[i]?.ex || "") === exKey){
-        // uncheck state
-        state.checks[itemId][lk][i] = false;
-        // uncheck dom if present
-        const dom = $(`input[type=checkbox][data-item="${cssEscape(itemId)}"][data-level="${cssEscape(lk)}"][data-idx="${i}"]`);
-        if(dom) dom.checked = false;
-      }
-    }
-  }
-}
-
-/** cssEscape fallback */
-function cssEscape(v){
-  try{ return CSS.escape(String(v)); }catch(_){ return String(v).replaceAll('"','\\"'); }
-}
-
 function getItemById(itemId){
   for(const g of DATA.groups){
     for(const it of g.items){
@@ -498,44 +468,73 @@ function getItemById(itemId){
   throw new Error("Item not found: " + itemId);
 }
 
+function enforceExclusivity(itemId, exKey, keepLevel, keepIdx){
+  const item = getItemById(itemId);
+  for(const lk of LEVEL_ORDER){
+    const pts = item.levels[lk]?.points ?? [];
+    for(let i=0;i<pts.length;i++){
+      if(lk===keepLevel && i===keepIdx) continue;
+      if((pts[i]?.ex || "") === exKey){
+        state.checks[itemId][lk][i] = false;
+        const dom = $(`input[type=checkbox][data-item="${cssEscape(itemId)}"][data-level="${cssEscape(lk)}"][data-idx="${i}"]`);
+        if(dom) dom.checked = false;
+      }
+    }
+  }
+}
+
 /** -------------------------
- *  COMPUTE LEVEL PER ITEM
+ *  SELECTION RULE
+ *  - Mention in text only if: any checkbox OR overall not auto
+ *  ------------------------- */
+function hasAnySelection(itemId){
+  if(state.overall[itemId] && state.overall[itemId] !== "auto") return true;
+  for(const lk of LEVEL_ORDER){
+    const arr = state.checks[itemId][lk] || [];
+    if(arr.some(Boolean)) return true;
+  }
+  return false;
+}
+
+/** -------------------------
+ *  LEVEL COMPUTATION
+ *  - returns null if no selection AND overall is Auto
+ *  - if overall forced (not Auto) -> that level
+ *  - else compute weighted from selected checkboxes
  *  ------------------------- */
 function computeItemLevel(item){
   const forced = state.overall[item.id];
   if(forced && forced !== "auto") return forced;
 
-  // Auto: compute from checked points (weighted)
-  const counts = { vv:0, g:0, ge:0, u:0 };
+  const counts = Object.create(null);
   for(const lk of LEVEL_ORDER){
     const arr = state.checks[item.id][lk] || [];
     counts[lk] = arr.reduce((a,b)=>a+(b?1:0),0);
   }
-  const total = counts.vv + counts.g + counts.ge + counts.u;
-  if(total === 0) return "g"; // neutral default for auto with no checks
+  const total = LEVEL_ORDER.reduce((s,lk)=>s+counts[lk],0);
+  if(total === 0) return null; // IMPORTANT: no selection -> no level
 
-  // score weights: vv=3, g=2, ge=1, u=0
-  const score = counts.vv*3 + counts.g*2 + counts.ge*1 + counts.u*0;
-  const avg = score / total; // 0..3
+  // weights: ue=3, gut=2, gen=1, noch=0
+  const weight = { ue:3, gut:2, gen:1, noch:0 };
+  const score = LEVEL_ORDER.reduce((s,lk)=>s + counts[lk]*weight[lk], 0);
+  const avg = score / total;
 
-  if(avg >= 2.6) return "vv";
-  if(avg >= 1.7) return "g";
-  if(avg >= 0.9) return "ge";
-  return "u";
+  if(avg >= 2.6) return "ue";
+  if(avg >= 1.7) return "gut";
+  if(avg >= 0.9) return "gen";
+  return "noch";
 }
 
 /** -------------------------
  *  TEXT ENGINE
- *  - Generates paragraphs with mod-words wrapped in <span class="mod">...</span>
  *  ------------------------- */
-
-// mod words to highlight (we wrap when generating)
 const MOD_WORDS = [
   "oft","meist","gelegentlich","selten","durchwegs","zuverlässig","noch nicht durchgehend","punktuell","in der Regel"
 ];
 
+function escapeRegExp(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+
 function wrapMods(text){
-  // Replace longer phrases first to avoid partial overlaps
   const sorted = [...MOD_WORDS].sort((a,b)=>b.length-a.length);
   let out = text;
   for(const w of sorted){
@@ -544,32 +543,7 @@ function wrapMods(text){
   }
   return out;
 }
-function escapeRegExp(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
-
-function generateReportHTML(){
-  const pr = getPronouns();
-
-  // build per-group paragraphs, each paragraph based on items' computed levels + chosen points
-  const parts = [];
-  for(const group of DATA.groups){
-    const sentences = [];
-    for(const item of group.items){
-      const level = computeItemLevel(item);
-      const pts = getSelectedPoints(item.id);
-
-      sentences.push(buildSentenceForItem(item.title, level, pts, pr));
-    }
-    const paragraph = sentences.filter(Boolean).join(" ");
-    if(paragraph.trim()){
-      parts.push(`<p>${wrapMods(paragraph)}</p>`);
-    }
-  }
-
-  // Add closing paragraph (overall tone)
-  parts.push(`<p>${wrapMods(buildClosing(pr))}</p>`);
-
-  return parts.join("\n");
-}
+function wrapPlainMod(word){ return `<span class="mod">${esc(word)}</span>`; }
 
 function getSelectedPoints(itemId){
   const item = getItemById(itemId);
@@ -584,85 +558,96 @@ function getSelectedPoints(itemId){
   return selected;
 }
 
-function buildSentenceForItem(title, level, pts, pr){
-  // sentence patterns per level (zeugnisnah)
-  // keep "gut" clean: avoid unnecessary "meist" unless needed
-  // ensure "genügend" supportive, "ungenügend" clear with measures
-  const base = `Im Bereich <strong>${esc(title)}</strong>`;
-  const hasPts = pts.length > 0;
-
-  const focus = pickFocusSnippet(level, pts);
-
-  if(level === "vv"){
-    const s1 = `${base} zeigt ${pr.subj} eine <strong>sehr sichere</strong> und souveräne Kompetenz.`;
-    const s2 = hasPts ? ` ${focus}` : ` ${pr.capSubj} arbeitet durchwegs konzentriert und nutzt passende Strategien selbstständig.`;
-    return `${s1}${s2}`;
-  }
-
-  if(level === "g"){
-    const s1 = `${base} erfüllt ${pr.subj} die Erwartungen <strong>zuverlässig</strong>.`;
-    const s2 = hasPts ? ` ${focus}` : ` ${pr.capSubj} setzt Gelerntes in vertrauten Situationen sicher um und bleibt dabei sorgfältig.`;
-    return `${s1}${s2}`;
-  }
-
-  if(level === "ge"){
-    const s1 = `${base} zeigt ${pr.subj} <strong>grundsätzlich</strong> passende Ansätze, jedoch noch nicht durchgehend stabil.`;
-    const s2 = hasPts ? ` ${focus}` : ` ${pr.capSubj} profitiert von klaren Strukturhilfen (Zwischenschritte, Beispiele, kurze Kontrollroutinen).`;
-    const s3 = ` Mit regelmässiger Übung und gezielten Rückmeldungen kann ${pr.subj} die Sicherheit weiter ausbauen.`;
-    return `${s1}${s2}${s3}`;
-  }
-
-  // u
-  const s1 = `${base} sind die Lernziele aktuell <strong>noch nicht</strong> ausreichend gesichert.`;
-  const s2 = hasPts ? ` ${focus}` : ` ${pr.capSubj} benötigt enges Coaching, kleinschrittige Aufgabenstellungen und feste Übungsroutinen.`;
-  const s3 = ` Sinnvoll sind kurze, häufige Trainingssequenzen sowie konsequente Kontrollschritte, damit Fortschritte stabil werden.`;
-  return `${s1}${s2}${s3}`;
-}
-
 function pickFocusSnippet(level, pts){
-  // Use up to 2 selected points; if many, prefer matching computed level first
+  if(!pts || pts.length === 0){
+    // if no points but overall forced, keep general but meaningful
+    if(level === "ue") return "Die Lernziele werden nicht nur sicher erreicht, sondern in der Umsetzung sichtbar übertroffen.";
+    if(level === "gut") return "Die Lernziele werden gut erreicht; Vorgehensweisen sind nachvollziehbar und solide abgesichert.";
+    if(level === "gen") return `Die Lernziele werden im Kern erreicht; mit ${wrapPlainMod("gelegentlich")}er Unterstützung können wichtige Schritte weiter stabilisiert werden.`;
+    return `Die Lernziele sind ${wrapPlainMod("noch nicht durchgehend")} gesichert; es braucht klare Strukturierung und enges Coaching.`;
+  }
+
   const prefer = pts.filter(p=>p.level===level);
   const pool = prefer.length ? prefer : pts;
-
   const take = pool.slice(0, 2).map(p=>p.text);
-  if(take.length === 0){
-    // fallback by level
-    if(level==="vv") return "Er/Sie überzeugt durchwegs mit sehr klaren, eigenständigen Lösungswegen.";
-    if(level==="g") return "Er/Sie arbeitet zuverlässig und nachvollziehbar.";
-    if(level==="ge") return "Er/Sie braucht gelegentlich Unterstützung, um zentrale Schritte zu sichern.";
-    return "Er/Sie benötigt aktuell enges Coaching, um grundlegende Schritte aufzubauen.";
-  }
-
-  // Convert selected points into a compact, zeugnisnah sentence
-  // Keep "gut" without constant softeners; only one softener at most.
   const lead =
-    level==="vv" ? "Besonders positiv hervorzuheben ist, dass " :
-    level==="g"  ? "Dabei zeigt sich, dass " :
-    level==="ge" ? "Unterstützend wirkt, dass " :
-                   "Im Fokus steht, dass ";
+    level==="ue" ? "Besonders hervorzuheben ist, dass " :
+    level==="gut" ? "Dabei zeigt sich, dass " :
+    level==="gen" ? "Unterstützend wirkt, dass " :
+    "Im Fokus steht, dass ";
 
-  const joiner = take.length===2 ? " und " : "";
-  const core = take.length===2 ? `${take[0]}${joiner}${take[1]}` : take[0];
+  const core = take.length===2 ? `${take[0]} und ${take[1]}` : take[0];
 
-  // add one mod word sometimes for ge/u
-  if(level==="ge"){
+  if(level==="gen"){
     return `${lead}${wrapPlainMod("gelegentlich")} klare Strukturhilfen helfen – konkret: ${esc(core)}.`;
   }
-  if(level==="u"){
+  if(level==="noch"){
     return `${lead}${wrapPlainMod("noch nicht durchgehend")} zentrale Grundlagen gesichert sind – konkret: ${esc(core)}.`;
   }
-  // vv/g: no extra softeners
   return `${lead}${esc(core)}.`;
 }
 
-function wrapPlainMod(word){
-  // returns raw HTML, not escaped
-  return `<span class="mod">${esc(word)}</span>`;
+function buildSentenceForItem(title, level, pts, pr){
+  // level is one of LEVEL_ORDER
+  const base = `Im Bereich <strong>${esc(title)}</strong>`;
+
+  if(level === "ue"){
+    const s1 = `${base} werden die Lernziele <strong>übertroffen</strong>.`;
+    const s2 = ` ${pickFocusSnippet(level, pts)}`;
+    return `${s1}${s2}`;
+  }
+  if(level === "gut"){
+    const s1 = `${base} werden die Lernziele <strong>gut erreicht</strong>.`;
+    const s2 = ` ${pickFocusSnippet(level, pts)}`;
+    return `${s1}${s2}`;
+  }
+  if(level === "gen"){
+    const s1 = `${base} werden die Lernziele <strong>genügend erreicht</strong>.`;
+    const s2 = ` ${pickFocusSnippet(level, pts)}`;
+    const s3 = ` Mit klaren Zwischenzielen und passenden Übungsroutinen kann ${pr.subj} die Sicherheit weiter ausbauen.`;
+    return `${s1}${s2}${s3}`;
+  }
+  // noch
+  const s1 = `${base} sind die Lernziele <strong>noch nicht erreicht</strong>.`;
+  const s2 = ` ${pickFocusSnippet(level, pts)}`;
+  const s3 = ` Sinnvoll sind kleinschrittige Aufbauphasen, häufige kurze Trainingssequenzen und feste Kontrollschritte, damit Fortschritte stabil werden.`;
+  return `${s1}${s2}${s3}`;
 }
 
-function buildClosing(pr){
-  // overall tone paragraph referencing learning process; neutral & zeugnisnah
-  return `Insgesamt zeigt ${pr.subj} im Kompetenzbereich eine engagierte Arbeitshaltung. Mit klaren Zielen, passenden Rückmeldungen und einer konsequenten Übungsroutine kann ${pr.subj} ${wrapPlainMod("zuverlässig")} weitere Fortschritte sichern.`;
+function buildClosing(pr, mentionedCount){
+  if(mentionedCount === 0){
+    return `Es wurden aktuell noch keine Kriterien ausgewählt. Sobald Einschätzungen gesetzt sind, wird hier automatisch eine aussagekräftige Gesamtbeurteilung erstellt.`;
+  }
+  return `Insgesamt zeigt ${pr.subj} eine engagierte Arbeitshaltung. Mit klaren Zielen, gezielten Rückmeldungen und einer konsequenten Übungsroutine kann ${pr.subj} ${wrapPlainMod("zuverlässig")} weitere Fortschritte sichern.`;
+}
+
+function generateReportHTML(){
+  const pr = getPronouns();
+  const parts = [];
+  let mentioned = 0;
+
+  for(const group of DATA.groups){
+    const sentences = [];
+
+    for(const item of group.items){
+      if(!hasAnySelection(item.id)) continue; // IMPORTANT RULE
+      const level = computeItemLevel(item);
+      // if overall forced but no points, level is forced; if still null (shouldn't), skip
+      if(!level) continue;
+
+      const pts = getSelectedPoints(item.id);
+      sentences.push(buildSentenceForItem(item.title, level, pts, pr));
+      mentioned++;
+    }
+
+    const paragraph = sentences.filter(Boolean).join(" ");
+    if(paragraph.trim()){
+      parts.push(`<p>${wrapMods(paragraph)}</p>`);
+    }
+  }
+
+  parts.push(`<p>${wrapMods(buildClosing(pr, mentioned))}</p>`);
+  return parts.join("\n");
 }
 
 /** -------------------------
@@ -672,7 +657,6 @@ let lastAutoHTML = "";
 
 function refreshEditorIfNotModified(){
   const ed = $("#reportEditor");
-  // If user hasn't touched since last auto render (simple heuristic), update.
   const current = ed.innerHTML.trim();
   if(current === "" || current === lastAutoHTML){
     const html = generateReportHTML();
@@ -690,23 +674,70 @@ function forceRefreshEditor(){
 
 function refreshAll(){
   refreshEditorIfNotModified();
-  // nothing else live needed
 }
 
 /** -------------------------
- *  COPILOT WORKFLOW
+ *  TEXT UTILITIES
  *  ------------------------- */
+function getEditorPlainText(){
+  const ed = $("#reportEditor");
+  const clone = ed.cloneNode(true);
+  $$("span.mod", clone).forEach(s=>s.replaceWith(document.createTextNode(s.textContent)));
+  const ps = $$("p", clone);
+  if(ps.length){
+    return ps.map(p=>p.textContent.trim()).filter(Boolean).join("\n\n");
+  }
+  return clone.textContent.trim();
+}
+
+function rehighlightEditorMods(){
+  const ed = $("#reportEditor");
+  const text = getEditorPlainText();
+  const paras = text.split(/\n{2,}/).map(s=>s.trim()).filter(Boolean);
+  ed.innerHTML = paras.map(p=>`<p>${wrapMods(esc(p))}</p>`).join("\n");
+}
+
+function smoothEditorText(){
+  const ed = $("#reportEditor");
+  const text = getEditorPlainText();
+  const smoothed = text
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+
+  const paras = smoothed.split(/\n{2,}/).map(s=>s.trim()).filter(Boolean);
+  ed.innerHTML = paras.map(p=>`<p>${esc(p)}</p>`).join("\n");
+  rehighlightEditorMods();
+  lastAutoHTML = ed.innerHTML.trim();
+  toast("Text geglättet.");
+}
+
+/** -------------------------
+ *  CLIPBOARD / COPILOT
+ *  ------------------------- */
+function collectHeader(){
+  const student = ($("#fStudent").value || "").trim();
+  const cls = ($("#fClass").value || "").trim();
+  const gender = $("#fGender").value;
+  const place = ($("#fPlace").value || "").trim();
+  const dateIso = ($("#fDate").value || "").trim();
+  const teacher = ($("#fTeacher").value || "").trim();
+  return { student, cls, gender, place, dateIso, dateHuman: formatSwissDate(dateIso), teacher };
+}
+
 function buildCopilotPromptBundle(){
   const header = collectHeader();
   const textPlain = getEditorPlainText();
   const comment = ($("#teacherComment").value || "").trim();
 
-  const prompt = [
-    `Du bist eine erfahrene Schweizer Primarlehrperson und formulierst zeugnisnahe Beurteilungen.`,
-    `Aufgabe: Glätte/verbessere den folgenden Fliesstext zu «Fachkompetenzen – Lernziele».`,
-    `Wichtig: Ton wohlwollend und professionell, aber klar. Keine Übertreibungen. Keine Floskeln.`,
+  return [
+    `Du bist eine erfahrene Schweizer Lehrperson und formulierst zeugnisnahe, pädagogisch präzise Beurteilungen.`,
+    `Aufgabe: Überarbeite den folgenden Fliesstext zu «Fachkompetenzen – Lernziele».`,
+    `Qualität: sprachlich präzise, wohlwollend, aber aussagekräftig. Keine Floskeln, keine Übertreibung.`,
+    `Wichtig: Inhalt NICHT erfinden. Nur glätten, konkretisieren, Redundanz reduzieren.`,
     `Pronomen gemäss Angaben verwenden: ${header.gender==="w" ? "sie/ihr" : "er/sein"}.`,
-    `Behalte die Absatzstruktur. Inhalt nicht erfinden. Konkretheit erhöhen, ohne neue Fakten zu erfinden.`,
+    `Behalte die Absatzstruktur.`,
     `Wenn der Kommentar der Lehrperson vorhanden ist: als letzten Absatz integrieren (nicht als eigenes Feld).`,
     ``,
     `--- FORMULARKOPF ---`,
@@ -724,8 +755,6 @@ function buildCopilotPromptBundle(){
     `--- AUSGABEFORMAT ---`,
     `Gib nur den überarbeiteten Fliesstext zurück (mit Absätzen), ohne zusätzliche Erklärungen.`
   ].join("\n");
-
-  return prompt;
 }
 
 async function copyToClipboard(text){
@@ -733,8 +762,7 @@ async function copyToClipboard(text){
     await navigator.clipboard.writeText(text);
     toast("In Zwischenablage kopiert.");
     return true;
-  }catch(err){
-    // fallback via hidden textarea
+  }catch(_){
     try{
       const ta = document.createElement("textarea");
       ta.value = text;
@@ -745,89 +773,35 @@ async function copyToClipboard(text){
       ta.select();
       const ok = document.execCommand("copy");
       ta.remove();
-      if(ok) toast("In Zwischenablage kopiert.");
-      else toast("Kopieren nicht möglich (Browser-Rechte).");
+      toast(ok ? "In Zwischenablage kopiert." : "Kopieren nicht möglich (Browser-Rechte).");
       return ok;
-    }catch(_){
+    }catch(__){
       toast("Kopieren nicht möglich (Browser-Rechte).");
       return false;
     }
   }
 }
 
-function getEditorPlainText(){
-  const ed = $("#reportEditor");
-  // keep paragraph breaks
-  const clone = ed.cloneNode(true);
-  // remove mod spans but keep text
-  $$("span.mod", clone).forEach(s=>{
-    s.replaceWith(document.createTextNode(s.textContent));
-  });
-  // convert <p> to lines
-  const ps = $$("p", clone);
-  if(ps.length){
-    return ps.map(p=>p.textContent.trim()).filter(Boolean).join("\n\n");
-  }
-  return clone.textContent.trim();
-}
-
-function smoothEditorText(){
-  const ed = $("#reportEditor");
-  const text = getEditorPlainText();
-  const smoothed = text
-    .replace(/[ \t]+\n/g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .replace(/[ \t]{2,}/g, " ")
-    .trim();
-
-  // write back as paragraphs, keep mod highlighting removed (intentional)
-  const paras = smoothed.split(/\n{2,}/).map(s=>s.trim()).filter(Boolean);
-  ed.innerHTML = paras.map(p=>`<p>${esc(p)}</p>`).join("\n");
-  // re-highlight mod words
-  rehighlightEditorMods();
-  lastAutoHTML = ed.innerHTML.trim();
-  toast("Text geglättet.");
-}
-
-function rehighlightEditorMods(){
-  const ed = $("#reportEditor");
-  const text = getEditorPlainText();
-  const paras = text.split(/\n{2,}/).map(s=>s.trim()).filter(Boolean);
-  ed.innerHTML = paras.map(p=>`<p>${wrapMods(esc(p))}</p>`).join("\n");
-}
-
 /** -------------------------
- *  OVERLAY (Copilot hover 3s)
+ *  OVERLAY (hover 3s on Copilot button)
  *  ------------------------- */
 let hoverTimer = null;
 function setupCopilotOverlay(){
   const btn = $("#btnCopilot");
   const overlay = $("#overlay");
 
-  function openOverlay(){
-    overlay.setAttribute("aria-hidden","false");
-  }
-  function closeOverlay(){
-    overlay.setAttribute("aria-hidden","true");
-  }
+  function openOverlay(){ overlay.setAttribute("aria-hidden","false"); }
+  function closeOverlay(){ overlay.setAttribute("aria-hidden","true"); }
 
-  btn.addEventListener("mouseenter", ()=>{
-    hoverTimer = window.setTimeout(()=>openOverlay(), 3000);
-  });
-  btn.addEventListener("mouseleave", ()=>{
-    if(hoverTimer) window.clearTimeout(hoverTimer);
-    hoverTimer = null;
-  });
+  btn.addEventListener("mouseenter", ()=>{ hoverTimer = setTimeout(openOverlay, 3000); });
+  btn.addEventListener("mouseleave", ()=>{ if(hoverTimer) clearTimeout(hoverTimer); hoverTimer=null; });
 
   overlay.addEventListener("click",(e)=>{
-    const close = e.target && e.target.getAttribute("data-close");
-    if(close) closeOverlay();
+    if(e.target && e.target.getAttribute("data-close")) closeOverlay();
   });
 
   document.addEventListener("keydown",(e)=>{
-    if(e.key === "Escape" && overlay.getAttribute("aria-hidden")==="false"){
-      closeOverlay();
-    }
+    if(e.key==="Escape" && overlay.getAttribute("aria-hidden")==="false") closeOverlay();
   });
 }
 
@@ -851,7 +825,7 @@ function createSpeechRecognizer(onText, onState){
 
   rec.onresult = (event)=>{
     let interim = "";
-    for(let i=event.resultIndex; i<event.results.length; i++){
+    for(let i=event.resultIndex;i<event.results.length;i++){
       const res = event.results[i];
       const t = res[0]?.transcript || "";
       if(res.isFinal) finalText += t;
@@ -868,23 +842,14 @@ function toggleDictation(target){
   if(target === "text"){
     if(!state.speech.textRec){
       state.speech.textRec = createSpeechRecognizer(
-        (txt, isInterim)=> applyDictationToEditor(txt, isInterim),
+        (txt)=> applyDictationToEditor(txt),
         (s)=> $("#dictateTextState").textContent = s
       );
-      if(!state.speech.textRec){
-        toast("Diktat nicht verfügbar (SpeechRecognition fehlt).");
-        return;
-      }
+      if(!state.speech.textRec){ toast("Diktat nicht verfügbar (SpeechRecognition fehlt)."); return; }
     }
     const rec = state.speech.textRec;
-    if(rec.__running){
-      rec.__running = false;
-      try{ rec.stop(); }catch(_){}
-      $("#dictateTextState").textContent = "stop";
-    }else{
-      rec.__running = true;
-      try{ rec.start(); }catch(_){}
-    }
+    if(rec.__running){ rec.__running=false; try{rec.stop();}catch(_){}; }
+    else{ rec.__running=true; try{rec.start();}catch(_){}; }
     return;
   }
 
@@ -894,72 +859,34 @@ function toggleDictation(target){
         (txt)=> { $("#teacherComment").value = txt; },
         (s)=> $("#dictateCommentState").textContent = s
       );
-      if(!state.speech.commentRec){
-        toast("Diktat nicht verfügbar (SpeechRecognition fehlt).");
-        return;
-      }
+      if(!state.speech.commentRec){ toast("Diktat nicht verfügbar (SpeechRecognition fehlt)."); return; }
     }
     const rec = state.speech.commentRec;
-    if(rec.__running){
-      rec.__running = false;
-      try{ rec.stop(); }catch(_){}
-      $("#dictateCommentState").textContent = "stop";
-    }else{
-      rec.__running = true;
-      try{ rec.start(); }catch(_){}
-    }
+    if(rec.__running){ rec.__running=false; try{rec.stop();}catch(_){}; }
+    else{ rec.__running=true; try{rec.start();}catch(_){}; }
   }
 }
 
-function applyDictationToEditor(text, isInterim){
-  // Append dictation to the last paragraph for simplicity.
-  // We keep it robust & predictable.
+function applyDictationToEditor(text){
+  // predictable: replace editor with dictated text as paragraph(s)
   const ed = $("#reportEditor");
-  const existing = getEditorPlainText();
-  let base = existing;
-
-  if(existing.trim() === ""){
-    base = text;
-  }else{
-    // If interim, don't permanently change; show at end
-    if(isInterim){
-      base = existing.replace(/\s*$/,"") + " " + text;
-    }else{
-      base = existing.replace(/\s*$/,"") + " " + text;
-    }
-  }
-
+  const base = (text || "").trim();
   const paras = base.split(/\n{2,}/).map(s=>s.trim()).filter(Boolean);
-  ed.innerHTML = paras.map(p=>`<p>${wrapMods(esc(p))}</p>`).join("\n");
-  lastAutoHTML = ""; // ensure future auto won't overwrite edited content
+  ed.innerHTML = paras.length ? paras.map(p=>`<p>${wrapMods(esc(p))}</p>`).join("\n") : "";
+  lastAutoHTML = ""; // mark as modified
 }
 
 /** -------------------------
- *  PDF EXPORT (2 pages)
- *  - Uses html2canvas + jsPDF if available
- *  - Fallback: open print view in new tab (window.print)
+ *  PDF (2 pages)
+ *  - Table still shows all criteria (zeugnisnah)
+ *  - If a criterion has no selection -> no X in circles
+ *  - Text respects selection rule (only selected criteria)
  *  ------------------------- */
-function collectHeader(){
-  const student = ($("#fStudent").value || "").trim();
-  const cls = ($("#fClass").value || "").trim();
-  const gender = $("#fGender").value;
-  const place = ($("#fPlace").value || "").trim();
-  const dateIso = ($("#fDate").value || "").trim();
-  const teacher = ($("#fTeacher").value || "").trim();
-
-  return {
-    student, cls, gender, place, dateIso,
-    dateHuman: formatSwissDate(dateIso),
-    teacher
-  };
-}
-
 function buildPdfTableHTML(){
-  // compact table: criteria rows with circles and x
   const rows = [];
   for(const group of DATA.groups){
     for(const item of group.items){
-      const lvl = computeItemLevel(item);
+      const lvl = computeItemLevel(item); // can be null
       rows.push(renderPdfRow(item.title, lvl));
     }
   }
@@ -967,20 +894,18 @@ function buildPdfTableHTML(){
   const head = `
     <div class="tHead">
       <div class="tCell"><strong>Kriterium</strong></div>
-      <div class="tCell"><div class="rot"><span>sehr gut</span></div></div>
-      <div class="tCell"><div class="rot"><span>gut</span></div></div>
-      <div class="tCell"><div class="rot"><span>genügend</span></div></div>
-      <div class="tCell"><div class="rot"><span>ungenügend</span></div></div>
+      <div class="tCell"><div class="rot"><span>lernziele übertroffen</span></div></div>
+      <div class="tCell"><div class="rot"><span>lernziele gut erreicht</span></div></div>
+      <div class="tCell"><div class="rot"><span>lernziele genügend erreicht</span></div></div>
+      <div class="tCell"><div class="rot"><span>lernziele noch nicht erreicht</span></div></div>
     </div>
   `;
-
   return `${head}${rows.join("")}`;
 }
 
 function renderPdfRow(title, lvl){
-  // circles left->right: vv g ge u
   const cells = LEVEL_ORDER.map(k=>{
-    const x = (k===lvl) ? `<span class="x">×</span>` : "";
+    const x = (lvl && k===lvl) ? `<span class="x">×</span>` : "";
     return `<div class="tCell circleCell"><span class="circle">○${x}</span></div>`;
   }).join("");
 
@@ -993,15 +918,12 @@ function renderPdfRow(title, lvl){
 }
 
 function buildPdfDetailsHTML(){
-  // structured list of selected checkbox points per criterion
   const blocks = [];
   for(const group of DATA.groups){
     const gItems = [];
     for(const item of group.items){
       const sel = getSelectedPoints(item.id);
       if(sel.length === 0) continue;
-
-      // keep in user language; include mod highlighting in HTML only here (optional)
       const bullets = sel.map(s=>`<li>${wrapMods(esc(s.text))}</li>`).join("");
       gItems.push(`
         <div class="dItem">
@@ -1023,12 +945,9 @@ function buildPdfDetailsHTML(){
 }
 
 function stripEditorForPdf(html){
-  // remove mod highlights -> plain text in B/W
   const tmp = document.createElement("div");
   tmp.innerHTML = html || "";
-  $$("span.mod", tmp).forEach(s=>{
-    s.replaceWith(document.createTextNode(s.textContent));
-  });
+  $$("span.mod", tmp).forEach(s=>s.replaceWith(document.createTextNode(s.textContent)));
   return tmp.innerHTML;
 }
 
@@ -1036,10 +955,7 @@ function integrateCommentIntoTextForPdf(){
   const comment = ($("#teacherComment").value || "").trim();
   const edHtml = $("#reportEditor").innerHTML || "";
   if(!comment) return edHtml;
-
-  // Append as last paragraph; keep mod wrapping in editor but PDF will strip
-  const appended = `${edHtml}\n<p>${wrapMods(esc(comment))}</p>`;
-  return appended;
+  return `${edHtml}\n<p>${wrapMods(esc(comment))}</p>`;
 }
 
 function syncPdfDom(){
@@ -1086,14 +1002,11 @@ async function exportPdf(){
   try{
     const root = $("#pdfRoot");
     const pages = $$(".pdfPage", root);
-
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation:"portrait", unit:"pt", format:"a4" });
 
-    for(let i=0; i<pages.length; i++){
+    for(let i=0;i<pages.length;i++){
       const page = pages[i];
-
-      // scale for crispness
       const canvas = await window.html2canvas(page, {
         scale: 2,
         backgroundColor: "#ffffff",
@@ -1101,11 +1014,8 @@ async function exportPdf(){
       });
 
       const imgData = canvas.toDataURL("image/jpeg", 0.92);
-
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-
-      // Fit image to A4
       const imgW = pageWidth;
       const imgH = (canvas.height / canvas.width) * imgW;
 
@@ -1114,9 +1024,11 @@ async function exportPdf(){
     }
 
     const h = collectHeader();
-    const safeName = (h.student || "OhneName").replace(/[^\p{L}\p{N}\-_ ]/gu,"").trim().replace(/\s+/g,"_");
+    const safeName = (h.student || "OhneName")
+      .replace(/[^\p{L}\p{N}\-_ ]/gu,"")
+      .trim()
+      .replace(/\s+/g,"_");
     const fileName = `Fachkompetenzen_Lernziele_${safeName || "OhneName"}_${h.dateIso || todayISO()}.pdf`;
-
     pdf.save(fileName);
     toast("PDF erstellt.");
   }catch(err){
@@ -1126,55 +1038,7 @@ async function exportPdf(){
   }
 }
 
-function openPrintFallback(){
-  // Open a clean tab with the pdfRoot HTML and print
-  syncPdfDom();
-
-  const root = $("#pdfRoot").cloneNode(true);
-  // ensure visible in new doc
-  root.style.position = "static";
-  root.style.left = "0";
-  root.style.top = "0";
-
-  const css = getPdfRelevantCss();
-
-  const win = window.open("", "_blank");
-  if(!win){
-    toast("Popup blockiert – bitte Popups erlauben oder manuell drucken.");
-    return;
-  }
-
-  win.document.open();
-  win.document.write(`<!doctype html>
-<html lang="de">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Fachkompetenzen – Lernziele (Print)</title>
-<style>
-  ${css}
-  @media print{
-    body{margin:0}
-    .pdfPage{page-break-after:always}
-  }
-</style>
-</head>
-<body>
-</body>
-</html>`);
-  win.document.close();
-  win.document.body.appendChild(root);
-
-  // wait a tick, then print
-  setTimeout(()=>{
-    try{ win.focus(); win.print(); }catch(_){}
-  }, 350);
-}
-
 function getPdfRelevantCss(){
-  // Minimal subset to render pdfRoot nicely in fallback.
-  // We read from styles.css via best-effort: copy computed styles isn't feasible offline.
-  // So we embed a compact set mirroring the PDF CSS classes.
   return `
     body{background:#fff;color:#000;font-family:"Times New Roman",Times,serif;}
     .pdfRoot{width:794px;background:#fff;}
@@ -1189,11 +1053,11 @@ function getPdfRelevantCss(){
     .pdfText p:last-child{margin:0}
     .pdfFooterNote{position:absolute;bottom:26px;left:44px;right:44px;font-size:9.5px;color:#111;border-top:1px solid #000;padding-top:6px;}
     .pdfTable{border:1px solid #000;font-size:11px;}
-    .tHead,.tRow{display:grid;grid-template-columns:1fr 42px 42px 42px 42px;}
+    .tHead,.tRow{display:grid;grid-template-columns:1fr 60px 60px 60px 60px;}
     .tHead{border-bottom:1px solid #000;align-items:stretch;}
     .tHead .tCell{padding:8px 6px;border-left:1px solid #000;display:flex;align-items:flex-end;justify-content:center;}
     .tHead .tCell:first-child{border-left:none;justify-content:flex-start;align-items:center;font-weight:700;}
-    .rot{height:72px;display:flex;align-items:center;justify-content:center;}
+    .rot{height:86px;display:flex;align-items:center;justify-content:center;}
     .rot span{display:inline-block;transform:rotate(-90deg);transform-origin:center;white-space:nowrap;font-weight:700;letter-spacing:.2px;}
     .tRow{border-top:1px solid #000;align-items:center;}
     .tRow:first-child{border-top:none}
@@ -1211,15 +1075,44 @@ function getPdfRelevantCss(){
     .pdfDetails{font-size:11px;line-height:1.35;}
     .dGroup{margin:0 0 8px;}
     .dGroup__title{font-weight:700;margin:0 0 4px;}
-    .dItem{margin:0 0 4px;}
+    .dItem{margin:0 0 6px;}
     .dItem__title{font-weight:700;}
     .dItem__bullets{margin:2px 0 0 14px;}
     .dItem__bullets li{margin:0 0 2px;}
   `;
 }
 
+function openPrintFallback(){
+  syncPdfDom();
+
+  const root = $("#pdfRoot").cloneNode(true);
+  root.style.position = "static";
+  root.style.left = "0";
+  root.style.top = "0";
+
+  const css = getPdfRelevantCss();
+  const win = window.open("", "_blank");
+  if(!win){ toast("Popup blockiert – bitte Popups erlauben oder manuell drucken."); return; }
+
+  win.document.open();
+  win.document.write(`<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Fachkompetenzen – Lernziele (Print)</title>
+<style>${css}@media print{body{margin:0}.pdfPage{page-break-after:always}}</style>
+</head>
+<body></body>
+</html>`);
+  win.document.close();
+  win.document.body.appendChild(root);
+
+  setTimeout(()=>{ try{ win.focus(); win.print(); }catch(_){} }, 350);
+}
+
 /** -------------------------
- *  TOAST (tiny)
+ *  TOAST
  *  ------------------------- */
 let toastTimer = null;
 function toast(msg){
@@ -1250,7 +1143,7 @@ function toast(msg){
 }
 
 /** -------------------------
- *  WIRE UI
+ *  UI WIRING
  *  ------------------------- */
 function wireUi(){
   $("#btnCopyPrompt").addEventListener("click", async ()=>{
@@ -1261,47 +1154,23 @@ function wireUi(){
   $("#btnCopilot").addEventListener("click", async ()=>{
     const bundle = buildCopilotPromptBundle();
     const ok = await copyToClipboard(bundle);
-    // even if copy fails, still open
     window.open("https://copilot.microsoft.com/", "_blank", "noopener,noreferrer");
     if(!ok) toast("Hinweis: Prompt konnte nicht automatisch kopiert werden.");
   });
 
-  $("#btnSmooth").addEventListener("click", ()=>{
-    smoothEditorText();
-  });
+  $("#btnSmooth").addEventListener("click", smoothEditorText);
+  $("#btnPdf").addEventListener("click", exportPdf);
 
-  $("#btnPdf").addEventListener("click", ()=>{
-    exportPdf();
-  });
-
-  // regenerate on header changes that affect grammar / meta
   ["#fGender","#fStudent","#fClass","#fPlace","#fDate","#fTeacher"].forEach(sel=>{
-    $(sel).addEventListener("change", ()=>{
-      // pronouns can change; regenerate if not user-modified
-      refreshAll();
-    });
-    $(sel).addEventListener("input", ()=>{
-      refreshAll();
-    });
-  });
-
-  $("#teacherComment").addEventListener("input", ()=>{
-    // no auto injection into editor during editing; only for pdf export
+    $(sel).addEventListener("change", refreshAll);
+    $(sel).addEventListener("input", refreshAll);
   });
 
   $("#btnDictateText").addEventListener("click", ()=> toggleDictation("text"));
   $("#btnDictateComment").addEventListener("click", ()=> toggleDictation("comment"));
 
-  // if user types in editor, stop auto-overwrite
-  $("#reportEditor").addEventListener("input", ()=>{
-    lastAutoHTML = ""; // mark as modified
-    // keep mod highlights if user pasted plain text without spans:
-    // lightweight rehighlight on paste is safer than on each input.
-  });
-
-  $("#reportEditor").addEventListener("paste", ()=>{
-    setTimeout(()=>rehighlightEditorMods(), 0);
-  });
+  $("#reportEditor").addEventListener("input", ()=>{ lastAutoHTML = ""; });
+  $("#reportEditor").addEventListener("paste", ()=>{ setTimeout(rehighlightEditorMods, 0); });
 
   setupCopilotOverlay();
 }
@@ -1313,7 +1182,6 @@ function boot(){
   initDefaults();
   initStateFromData();
   renderRaster();
-  // initial text
   forceRefreshEditor();
   wireUi();
 }
