@@ -1,0 +1,255 @@
+<!-- index.html -->
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Fachkompetenzen – Lernziele</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar__left">
+      <div class="brand">
+        <div class="brand__title">Fachkompetenzen – Lernziele</div>
+        <div class="brand__sub">Digitale Erfassung · Fliesstext · PDF (2 Seiten)</div>
+      </div>
+    </div>
+
+    <div class="topbar__right">
+      <button id="btnCopyPrompt" class="btn btn--ghost" type="button" title="Kopiert Text + Kommentar + perfekten Prompt">
+        Text + Prompt kopieren
+      </button>
+
+      <div class="copilotWrap">
+        <button id="btnCopilot" class="btn btn--primary" type="button" title="Öffnet Copilot und kopiert vorher den Prompt">
+          In Copilot bearbeiten
+        </button>
+      </div>
+
+      <button id="btnSmooth" class="btn" type="button" title="Nur Whitespace/Zeilenumbrüche glätten">
+        Nur Text glätten
+      </button>
+
+      <div class="divider"></div>
+
+      <label class="check">
+        <input id="chkDetailsInPdf" type="checkbox" />
+        <span>Bewertungskriterien im PDF ausgeben (inkl. Markierungen)</span>
+      </label>
+
+      <button id="btnPdf" class="btn btn--accent" type="button">
+        PDF exportieren
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2 class="h2">Formularkopf</h2>
+
+      <div class="grid grid--head">
+        <label class="field">
+          <span>Schüler*in Name</span>
+          <input id="fStudent" type="text" autocomplete="off" placeholder="Vorname Nachname" />
+        </label>
+
+        <label class="field">
+          <span>Klasse</span>
+          <input id="fClass" type="text" autocomplete="off" placeholder="z.B. 4a" />
+        </label>
+
+        <label class="field">
+          <span>Geschlecht</span>
+          <select id="fGender">
+            <option value="m">m (er / sein)</option>
+            <option value="w">w (sie / ihr)</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Ort</span>
+          <input id="fPlace" type="text" autocomplete="off" />
+        </label>
+
+        <label class="field">
+          <span>Datum</span>
+          <input id="fDate" type="date" />
+        </label>
+
+        <label class="field">
+          <span>Lehrperson</span>
+          <input id="fTeacher" type="text" autocomplete="off" placeholder="Name Lehrperson" />
+        </label>
+      </div>
+
+      <div class="hint">
+        Tipp: Änderungen im Raster aktualisieren den Text automatisch. Im Text kannst du alles direkt bearbeiten (inkl. markierte Stellschrauben-Wörter).
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card__row">
+        <h2 class="h2">Beurteilungsraster</h2>
+        <div class="legend">
+          <span class="pill">sehr gut</span>
+          <span class="pill">gut</span>
+          <span class="pill">genügend</span>
+          <span class="pill">ungenügend</span>
+        </div>
+      </div>
+
+      <div id="rasterMount" class="raster"></div>
+    </section>
+
+    <section class="card">
+      <div class="card__row">
+        <h2 class="h2">Fliesstext (editierbar)</h2>
+        <div class="tools">
+          <button id="btnDictateText" class="btn btn--small" type="button" title="Diktat für Fliesstext starten/stoppen">
+            🎙️ Diktat Text
+          </button>
+          <div id="dictateTextState" class="state"></div>
+        </div>
+      </div>
+
+      <div class="editorShell">
+        <div id="reportEditor" class="editor" contenteditable="true" spellcheck="true" aria-label="Beurteilungstext"></div>
+      </div>
+
+      <div class="split">
+        <div class="split__left">
+          <div class="card__row">
+            <h3 class="h3">Zusätzliche Bemerkungen der Lehrperson (optional)</h3>
+            <div class="tools">
+              <button id="btnDictateComment" class="btn btn--small" type="button" title="Diktat für Kommentar starten/stoppen">
+                🎙️ Diktat Kommentar
+              </button>
+              <div id="dictateCommentState" class="state"></div>
+            </div>
+          </div>
+
+          <textarea id="teacherComment" class="textarea" rows="5" placeholder="Dieser Kommentar wird beim PDF-Export automatisch als letzter Absatz in den Fliesstext integriert (erscheint nicht als separates Feld)."></textarea>
+        </div>
+
+        <div class="split__right">
+          <div class="infoBox">
+            <div class="infoBox__title">Markierungen im Editor</div>
+            <p class="infoBox__p">
+              Stellschrauben-Wörter (z.B. <span class="mod">meist</span>, <span class="mod">gelegentlich</span>, <span class="mod">noch nicht durchgehend</span>) sind farbig markiert, damit du sie schnell findest.
+              Im PDF wird alles schwarz-weiss ausgegeben.
+            </p>
+            <div class="infoBox__title">Widerspruchsschutz</div>
+            <p class="infoBox__p">
+              Detail-Checkboxen können sich logisch ausschliessen (ex-Schlüssel). Wenn du eine Option auswählst, werden andere mit gleichem Schlüssel automatisch abgewählt.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Hidden printable/export area -->
+    <section class="exportWrap">
+      <div id="pdfRoot" class="pdfRoot">
+        <!-- page 1 -->
+        <article class="pdfPage" data-page="1">
+          <div class="pdfHeader">
+            <div class="pdfTitle">Fachkompetenzen – Lernziele</div>
+            <div class="pdfMeta">
+              <div><strong>Schüler*in:</strong> <span id="pStudent"></span></div>
+              <div><strong>Klasse:</strong> <span id="pClass"></span></div>
+              <div><strong>Ort:</strong> <span id="pPlace"></span></div>
+              <div><strong>Datum:</strong> <span id="pDate"></span></div>
+              <div><strong>Lehrperson:</strong> <span id="pTeacher"></span></div>
+            </div>
+          </div>
+
+          <div class="pdfBlock">
+            <div class="pdfSectionTitle">Übersicht Fachkompetenzen / Lernziele</div>
+            <div id="pdfTableMount" class="pdfTable"></div>
+          </div>
+
+          <div class="pdfBlock">
+            <div class="pdfSectionTitle">Gesamtbeurteilung</div>
+            <div id="pdfTextMount" class="pdfText"></div>
+          </div>
+
+          <div id="pdfDetailsBlock" class="pdfBlock" style="display:none;">
+            <div class="pdfSectionTitle">Ausgewählte Bewertungskriterien (Detail)</div>
+            <div id="pdfDetailsMount" class="pdfDetails"></div>
+          </div>
+
+          <div class="pdfFooterNote">
+            Hinweis: Die Detailauswahl basiert auf den angekreuzten Punkten im Raster.
+          </div>
+        </article>
+
+        <!-- page 2 -->
+        <article class="pdfPage" data-page="2">
+          <div class="pdfHeader">
+            <div class="pdfTitle">Fachkompetenzen – Lernziele</div>
+            <div class="pdfMeta">
+              <div><strong>Schüler*in:</strong> <span id="pStudent2"></span></div>
+              <div><strong>Klasse:</strong> <span id="pClass2"></span></div>
+              <div><strong>Datum:</strong> <span id="pDate2"></span></div>
+            </div>
+          </div>
+
+          <div class="pdfBlock">
+            <div class="pdfSectionTitle">Bemerkungen der Eltern</div>
+            <div class="linesBox" aria-label="Bemerkungen der Eltern (Handschriftfeld)">
+              <div class="line"></div>
+              <div class="line"></div>
+              <div class="line"></div>
+              <div class="line"></div>
+              <div class="line"></div>
+              <div class="line"></div>
+              <div class="line"></div>
+              <div class="line"></div>
+            </div>
+          </div>
+
+          <div class="signGrid">
+            <div class="sign">
+              <div class="sign__label">Lehrperson: <span id="pTeacherSign"></span></div>
+              <div class="sign__line"></div>
+            </div>
+            <div class="sign">
+              <div class="sign__label">Visum Eltern</div>
+              <div class="sign__line"></div>
+            </div>
+          </div>
+
+          <div class="pdfFooterNote">
+            Ort/Datum gemäss Seite 1.
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <!-- Copilot overlay (hover 3s on button) -->
+  <div id="overlay" class="overlay" aria-hidden="true">
+    <div class="overlay__backdrop" data-close="1"></div>
+    <div class="overlay__panel" role="dialog" aria-modal="true" aria-label="Copilot Anleitung">
+      <button class="overlay__close" type="button" aria-label="Schliessen" data-close="1">✕</button>
+      <h3 class="overlay__h">Copilot-Workflow (schnell & sauber)</h3>
+      <ol class="overlay__ol">
+        <li>Klicke <strong>„In Copilot bearbeiten“</strong>. Der Prompt wird vorher automatisch kopiert.</li>
+        <li>In Copilot: <strong>Einfügen</strong> (Ctrl+V) und bearbeiten lassen.</li>
+        <li>Resultat zurückkopieren und im Editor prüfen/feinschleifen (Ton, Namen, Konkretheit).</li>
+      </ol>
+      <div class="overlay__tip">
+        Tipp: Die <span class="mod">markierten Stellschrauben-Wörter</span> kannst du gezielt ersetzen (z.B. „oft“ → „durchwegs“).
+      </div>
+      <div class="overlay__actions">
+        <button id="overlayOk" class="btn btn--primary" type="button" data-close="1">Verstanden</button>
+      </div>
+    </div>
+  </div>
+
+  <script defer src="vendor/html2canvas.min.js"></script>
+  <script defer src="vendor/jspdf.umd.min.js"></script>
+  <script defer src="app.js"></script>
+</body>
+</html>
