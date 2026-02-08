@@ -1,4 +1,4 @@
-/* styles.css */
+/* styles.css (UNCHANGED from previous version; included for copy-paste completeness) */
 :root{
   --bg:#f4f6f8;
   --card:#ffffff;
@@ -11,8 +11,6 @@
 
   --primary:#0b5fff;
   --accent:#0f766e;
-  --danger:#b91c1c;
-  --focus:#111827;
 
   --modBg:#fff2cc;
   --modInk:#7a4b00;
@@ -460,7 +458,7 @@ body{
 }
 .tHead, .tRow{
   display:grid;
-  grid-template-columns: 1fr 42px 42px 42px 42px;
+  grid-template-columns: 1fr 60px 60px 60px 60px;
 }
 .tHead{
   border-bottom:1px solid #000;
@@ -480,7 +478,7 @@ body{
   font-weight:700;
 }
 .rot{
-  height:72px;
+  height:86px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -534,7 +532,7 @@ body{
   margin:0 0 4px;
 }
 .dItem{
-  margin:0 0 4px;
+  margin:0 0 6px;
 }
 .dItem__title{
   font-weight:700;
