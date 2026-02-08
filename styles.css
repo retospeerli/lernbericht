@@ -1,4 +1,4 @@
-/* styles.css (UNCHANGED from previous version; included for copy-paste completeness) */
+/* styles.css (UNVERÄNDERT zur ursprünglichen Variante; nur Labels/Content kommen aus app.js) */
 :root{
   --bg:#f4f6f8;
   --card:#ffffff;
@@ -478,7 +478,7 @@ body{
   font-weight:700;
 }
 .rot{
-  height:86px;
+  height:92px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -532,7 +532,7 @@ body{
   margin:0 0 4px;
 }
 .dItem{
-  margin:0 0 6px;
+  margin:0 0 4px;
 }
 .dItem__title{
   font-weight:700;
@@ -592,7 +592,7 @@ body{
   background:#fff;
   border-radius:16px;
   border:1px solid var(--line);
-  box-shadow:var(--shadow);
+  box-shadow:0 10px 30px rgba(0,0,0,.12);
   padding:16px 16px 14px;
 }
 .overlay__close{
